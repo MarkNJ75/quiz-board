@@ -63,6 +63,51 @@
     min-width:0;
   }
 
+.builder-container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.builder-title {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  letter-spacing: 1px;
+}
+
+.setup-input,
+.setup-select {
+  display: block;
+  margin: 6px auto 12px auto;
+  max-width: 400px;
+}
+
+.builder-top {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end; /* KEY */
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.builder-top > div:not(.builder-actions) {
+  display: flex;
+  flex-direction: column;
+}
+
+.builder-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px; /* matches .setup-select bottom margin */
+}
+
+.builder-actions button {
+  white-space: nowrap;
+}
+
 .saved-games-panel{
     position:sticky;
     top:10px;
@@ -714,95 +759,66 @@
 
 <header>
   <!-- Teacher Setup Panel -->
-<div id="teacherSetup" style="text-align:center; padding:20px; visibility:hidden;">
-  <h2>Teacher Game Builder</h2>
+  <div id="teacherSetup" style="padding:20px; visibility:hidden;">
 
-  <label class="setup-label" for="gameSubtitleInput">Subtitle / Unit Name</label>
-  <input id="gameSubtitleInput" class="setup-input" placeholder="New Draft">
-  <label class="setup-label" for="saveNameInput">
-  Class / Period Save Name
-  </label>
-  <input
-    id="saveNameInput"
-    class="setup-input"
-    placeholder="e.g. Period 2 ESL"
-  >
+    <div class="builder-layout">
 
-  <div class="builder-top">
-    <div>
-      <label class="setup-label" for="categoryCount">Number of Categories</label>
-      <select id="categoryCount" class="setup-select" onchange="buildTeacherFields()">
-        <option value="2">2 Categories</option>
-        <option value="3">3 Categories</option>
-        <option value="4">4 Categories</option>
-        <option value="5" selected>5 Categories</option>
-        <option value="6">6 Categories</option>
-      </select>
+      <div class="builder-main">
+        <div class="builder-container">
+          <h2 class="builder-title">Teacher Game Builder</h2>
+
+          <label class="setup-label" for="gameSubtitleInput">Subtitle / Unit Name</label>
+          <input id="gameSubtitleInput" class="setup-input" placeholder="New Draft">
+
+          <label class="setup-label" for="saveNameInput">Class / Period Save Name</label>
+          <input id="saveNameInput" class="setup-input" placeholder="e.g. Period 2 ESL">
+
+          <div class="builder-top">
+            <div>
+              <label class="setup-label" for="categoryCount">Number of Categories</label>
+              <select id="categoryCount" class="setup-select" onchange="buildTeacherFields()">
+                <option value="2">2 Categories</option>
+                <option value="3">3 Categories</option>
+                <option value="4">4 Categories</option>
+                <option value="5" selected>5 Categories</option>
+                <option value="6">6 Categories</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="setup-label" for="teamCount">Number of Teams</label>
+              <select id="teamCount" class="setup-select">
+                <option value="2" selected>2 Teams</option>
+                <option value="3">3 Teams</option>
+                <option value="4">4 Teams</option>
+                <option value="5">5 Teams</option>
+                <option value="6">6 Teams</option>
+              </select>
+            </div>
+
+            <div class="builder-actions">
+              <button class="small-reset-btn" onclick="newDraft()">New Draft</button>
+              <button class="small-reset-btn" onclick="startGame()">Start Game</button>
+            </div>
+          </div>
+
+          <h1 id="gameTitle">⚡ Jeopardy ⚡</h1>
+          <p id="gameSubtitle">Review Game</p>
+          <div id="builderClassName" class="builder-class-name">New Class / Period</div>
+
+          <div id="teacherBoardBuilder" class="builder-wrap"></div>
+        </div>
+      </div>
+
+      <aside class="saved-games-panel">
+        <h3>My Saved Games</h3>
+        <div id="savedGamesList"></div>
+      </aside>
+
     </div>
-    <div>
-      <label class="setup-label" for="teamCount">Number of Teams</label>
-      <select id="teamCount" class="setup-select">
-        <option value="2" selected>2 Teams</option>
-        <option value="3">3 Teams</option>
-        <option value="4">4 Teams</option>
-        <option value="5">5 Teams</option>
-        <option value="6">6 Teams</option>
-      </select>
-    </div>
-    <button class="small-reset-btn" onclick="newDraft()">New Draft</button>
-    <button class="small-reset-btn" onclick="exportGameTemplate()">Download Game Backup</button>
-    <label class="small-reset-btn" for="importGameInput" style="display:inline-block;">
-      Import Game Backup</label>
-    <input
-      id="importGameInput"
-      type="file"
-      accept=".json,application/json"
-      style="display:none;"
-      onchange="importGameTemplate(this)"
-    >
-
-    <button class="small-reset-btn" onclick="clearDraft()">Clear Draft</button>
-
-    <button class="small-reset-btn" onclick="startGame()">Start Game</button>
   </div>
-
-  <div>
-    <label class="setup-label" for="builtInTemplateSelect">My game library</label>
-    <select id="builtInTemplateSelect" class="setup-select">
-      <option value="">Choose a game...</option>
-    </select>
-    <br>
-    <button class="small-reset-btn" onclick="loadSelectedBuiltInTemplate()">
-      Load Game</button>
-  </div>
-
- 
- 
-  <div class="builder-layout">
-
-    <div class="builder-main">
-      <h1 id="gameTitle">⚡ Jeopardy ⚡</h1>
-      <p id="gameSubtitle">Review Game</p>
-      <div id="builderClassName" class="builder-class-name">New Class / Period</div>
-
-      <div id="teacherBoardBuilder" class="builder-wrap"></div>
-    </div>
-
-    <aside class="saved-games-panel">
-      <h3>My Saved Games</h3>
-      <div id="savedGamesList"></div>
-    </aside>
-
-  </div>
-  <div class="local-save-warning">
-    ⚠️ My Saved Games are stored only in this browser on this computer.
-    To keep a backup, use Download Game Backup.
-  </div>
-  <br>
-
-</div>
-  
 </header>
+
 
 <div class="board-wrap" id="gameArea" style="display:none;">
   
