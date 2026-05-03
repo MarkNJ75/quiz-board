@@ -463,36 +463,33 @@ function openModal(col, row){
   }
 }
 
-function closeModal(){
+function closeModal() {
+  const modalBg = document.getElementById("modalBg");
+  if (modalBg) modalBg.classList.remove("open");
+
   stopTimer();
   stopThinkMusic();
+  stopHeartbeat(); // if you have this
 
-  const warningBg = document.getElementById("stealWarningBg");
-  if (warningBg) warningBg.classList.remove("open");
+  // 🔥 RESET DAILY DOUBLE UI
+  const ddBanner = document.getElementById("dailyDoubleBanner");
+  const wagerBox = document.getElementById("wagerBox");
+  const questionBlock = document.querySelector(".question-block");
+  const answerSection = document.querySelector(".answer-section");
+  const scoreButtons = document.getElementById("scoreButtons");
 
-  document.getElementById('modalBg').classList.remove('open');
+  if (ddBanner) ddBanner.style.display = "none";
+  if (wagerBox) wagerBox.style.display = "none";
 
-  timerSec = FULL_TIME;
-  timerMax = FULL_TIME;
-  timerPaused = false;
-  updateTimerUI();
+  if (questionBlock) questionBlock.style.visibility = "visible";
+  if (answerSection) answerSection.style.visibility = "visible";
+  if (scoreButtons) scoreButtons.style.visibility = "visible";
 
-  if (questionWasRevealed) {
-    markCurrentCellAnswered();
-  }
-
-  currentCell = null;
+  // Reset state
   stealActive = false;
   stealingTeam = null;
-  originalTeam = null;
-  teamBeingStolenFrom = null;
-  turnTeamBeforeSteal = null;
-  stealPenaltyApplied = false;
 
-  applyStealDimming();
-  buildScoreboard();
-  syncModalScoreboard?.();
-  stopHeartbeat();
+  currentCell = null;
 }
 
 function markCurrentCellAnswered(){
