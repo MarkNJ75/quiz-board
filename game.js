@@ -951,13 +951,15 @@ function playWrongSound(){
 // ── Saved Game Functions ────────────────────────────────────────────────────────
 
 function saveGame() {
-  const name = currentEditName || getSaveName();
+  const name = getSaveName();
   if (!name) return;
 
-  // ✅ fallback to draft if no name
-  if (!name) {
-    name = "__draft__";
+  // If teacher renamed the class/period, remove old save key
+  if (currentEditName && currentEditName !== name) {
+    localStorage.removeItem(getSaveKey(currentEditName));
   }
+
+  currentEditName = name;
 
   const key = getSaveKey(name);
 
