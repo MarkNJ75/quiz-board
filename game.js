@@ -1346,6 +1346,58 @@ function startSessionFromCurrentTemplate(){
   return true;
 }
 
+const BUILT_IN_TEMPLATES = [
+  {
+    name: "Past Tense Review",
+    file: "templates/past-tense-review.json"
+  },
+  {
+    name: "Amala's Hope Chapter 2",
+    file: "templates/amala-hope-chapter-2.json"
+  }
+];
+
+function populateBuiltInTemplates(){
+  const select = document.getElementById("builtInTemplateSelect");
+  if (!select) return;
+
+  select.innerHTML = '<option value="">Choose a template...</option>';
+
+  BUILT_IN_TEMPLATES.forEach(template => {
+    const option = document.createElement("option");
+    option.value = template.file;
+    option.textContent = template.name;
+    select.appendChild(option);
+  });
+}
+
+async function loadSelectedBuiltInTemplate(){
+  const select = document.getElementById("builtInTemplateSelect");
+  if (!select || !select.value) {
+    alert("Choose a template first.");
+    return;
+  }
+
+  try {
+    const res = await fetch(select.value);
+
+    if (!res.ok) {
+      throw new Error("Template file not found.");
+    }
+
+    const template = await res.json();
+
+    if (loadTemplateIntoBuilder(template)) {
+      updateBuilderHeader();
+      saveGame();
+      showDraftSavedBanner();
+    }
+  } catch (err) {
+    alert("Could not load this template.");
+    console.error(err);
+  }
+}
+
 // ── Init ───────────────────────────────────────────────────────────────────
 
 function updateGameScreenHeader(name = "") {
@@ -1424,6 +1476,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const teacherSetup = document.getElementById("teacherSetup");
   if (teacherSetup) teacherSetup.style.visibility = "visible";
 
+  populateBuiltInTemplates();
   refreshSavedGamesList();
 });
 

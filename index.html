@@ -80,6 +80,19 @@
     margin-bottom:10px;
   }
 
+.local-save-warning {
+  margin: 10px 0 14px;
+  padding: 10px 12px;
+  border: 1px solid #f5c51888;
+  border-radius: 8px;
+  background: #f5c51818;
+  color: #fff3b0;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  line-height: 1.3;
+}
+
 #savedGamesList button{
     margin-right:6px;
     margin-top:4px;
@@ -737,10 +750,9 @@
       </select>
     </div>
     <button class="small-reset-btn" onclick="newDraft()">New Draft</button>
-    <button class="small-reset-btn" onclick="exportGameTemplate()">Export Template</button>
+    <button class="small-reset-btn" onclick="exportGameTemplate()">Download Game Backup</button>
     <label class="small-reset-btn" for="importGameInput" style="display:inline-block;">
-      Import Template
-    </label>
+      Import Game Backup</label>
     <input
       id="importGameInput"
       type="file"
@@ -752,6 +764,16 @@
     <button class="small-reset-btn" onclick="clearDraft()">Clear Draft</button>
 
     <button class="small-reset-btn" onclick="startGame()">Start Game</button>
+  </div>
+
+  <div>
+    <label class="setup-label" for="builtInTemplateSelect">My game library</label>
+    <select id="builtInTemplateSelect" class="setup-select">
+      <option value="">Choose a game...</option>
+    </select>
+    <br>
+    <button class="small-reset-btn" onclick="loadSelectedBuiltInTemplate()">
+      Load Game</button>
   </div>
 
  
@@ -767,10 +789,14 @@
     </div>
 
     <aside class="saved-games-panel">
-      <h3>Saved Games</h3>
+      <h3>My Saved Games</h3>
       <div id="savedGamesList"></div>
     </aside>
 
+  </div>
+  <div class="local-save-warning">
+    ⚠️ My Saved Games are stored only in this browser on this computer.
+    To keep a backup, use Download Game Backup.
   </div>
   <br>
 
