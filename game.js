@@ -1543,24 +1543,41 @@ function showDraftSavedBanner() {
 }
 
 document.addEventListener("input", (e) => {
-  if (e.target.matches(".qa-grid textarea, .category-title-input, #gameSubtitleInput, #saveNameInput")) {
-    updateBuilderHeader();
-
-    clearTimeout(draftSaveTimer);
-
-    draftSaveTimer = setTimeout(() => {
-      const template = getCurrentTemplateData(false);
-      if (!template) return;
-
-      categories = template.categories;
-      questions = template.questions;
-      answered = Array.from({ length: categories.length }, () => Array(ROWS).fill(false));
-
-      saveGame();
-      showDraftSavedBanner();
-    }, DRAFT_SAVE_DELAY);
+  if (e.target.matches(
+    ".qa-grid textarea, .category-title-input, #gameSubtitleInput, #saveNameInput"
+  )) {
+    scheduleBuilderAutosave();
   }
 });
+
+document.addEventListener("change", (e) => {
+  if (e.target.matches(
+    ".dd-cell input, #categoryCount, #teamCount"
+  )) {
+    scheduleBuilderAutosave();
+  }
+});
+
+function scheduleBuilderAutosave(){
+  updateBuilderHeader();
+
+  clearTimeout(draftSaveTimer);
+
+  draftSaveTimer = setTimeout(() => {
+    const template = getCurrentTemplateData(false);
+    if (!template) return;
+
+    categories = template.categories;
+    questions = template.questions;
+    answered = Array.from(
+      { length: categories.length },
+      () => Array(ROWS).fill(false)
+    );
+
+    saveGame();
+    showDraftSavedBanner();
+  }, DRAFT_SAVE_DELAY);
+}
 
 function clearDraft() {
   if (!confirm(
@@ -1695,6 +1712,7 @@ function refreshSavedGamesList() {
     container.appendChild(row);
   });
 }
+
 function resumeSavedGame(name) {
   const key = getSaveKey(name);
   const saved = localStorage.getItem(key);
@@ -1707,6 +1725,28 @@ function resumeSavedGame(name) {
   currentEditName = name;
   const state = JSON.parse(saved);
 
+  const hasCompleteCategories =
+  Array.isArray(state.categories) &&
+  state.categories.length >= 2 &&
+  state.categories.every(cat => String(cat || "").trim());
+
+  const hasCompleteQuestions =
+    Array.isArray(state.questions) &&
+    state.questions.length === state.categories.length &&
+    state.questions.every(category =>
+      Array.isArray(category) &&
+      category.length === ROWS &&
+      category.every(q =>
+        String(q.answer || q.q || "").trim() &&
+        String(q.question || q.a || "").trim()
+      )
+    );
+
+  if (!hasCompleteCategories || !hasCompleteQuestions) {
+    alert("This saved game is incomplete. Click Edit and finish all categories, answers, and questions before resuming.");
+    return;
+  }
+
   const selectedTeamCount = getSelectedTeamCount();
   const savedTeamCount = clampTeamCount(state.teamCount || state.scores?.length || 2);
 
@@ -1716,12 +1756,12 @@ function resumeSavedGame(name) {
     const ok = confirm(
       `You've changed the number of teams from ${savedTeamCount} to ${selectedTeamCount}.
 
-This will reset:
-• scores
-• answered questions
-• active team
+  This will reset:
+  • scores
+  • answered questions
+  • active team
 
-Do you wish to proceed?`
+  Do you wish to proceed?`
     );
 
     if (!ok) return;
