@@ -1626,17 +1626,35 @@ function newDraft() {
   categories = [];
   questions = [];
   answered = [];
+
   teamCount = 2;
   scores = Array(teamCount).fill(0);
   teamNames = makeDefaultTeamNames(teamCount);
   activeTeam = 0;
 
+  // rebuild blank form
   buildTeacherFields();
+
+  // force all inputs/checkboxes blank
+  document.querySelectorAll(".category-title-input").forEach(input => {
+    input.value = "";
+  });
+
+  document.querySelectorAll(".qa-grid textarea").forEach(textarea => {
+    textarea.value = "";
+  });
+
+  document.querySelectorAll(".dd-cell input").forEach(box => {
+    box.checked = false;
+  });
+
   updateBuilderHeader();
 
   document.getElementById("teacherSetup").style.display = "block";
   document.getElementById("gameArea").style.display = "none";
   document.getElementById("gameBottomBar").style.display = "none";
+
+  refreshSavedGamesList();
 }
 
 function refreshSavedGamesList() {
