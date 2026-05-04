@@ -18,6 +18,7 @@ let stealPenaltyApplied = false;
 let teamBeingStolenFrom = null;
 let turnTeamBeforeSteal = null;
 let currentEditName = null;
+let pendingStartFreshName = null;
 // ── Teams ──────────────────────────────────────────────────────────────────
 const MIN_TEAMS = 2;
 const MAX_TEAMS = 6;
@@ -186,6 +187,9 @@ function startTimer(seconds, max){
   timerMax = max;
   timerPaused = false;
 
+  const bar = document.getElementById('timerBar');
+  if (bar) bar.classList.add('running');
+
   updateTimerUI();
 
   timerInterval = setInterval(() => {
@@ -220,6 +224,9 @@ function stopTimer(){
 
   const btn = document.getElementById('pauseBtn');
   if (btn) btn.textContent = '⏸ Pause';
+
+  const bar = document.getElementById('timerBar');
+  if (bar) bar.classList.remove('running'); // 👈 important
 }
 
 function updateTimerUI(){
@@ -247,17 +254,29 @@ function updateTimerUI(){
 }
 
 function pauseResume(){
+  if (!timerInterval) return; // ✅ no timer = pause button does nothing
+
   timerPaused = !timerPaused;
 
   const btn = document.getElementById('pauseBtn');
+  const bar = document.getElementById('timerBar');
+
   btn.textContent = timerPaused ? '▶ Resume' : '⏸ Pause';
 
   if (timerPaused) {
-    // PAUSE music
     if (audio) audio.pause();
+    stopHeartbeat();
+
+    if (bar) bar.classList.remove('running'); // 👈 STOP animation instantly
+
   } else {
-    // RESUME music
-    if (audio) audio.play().catch(()=>{});
+    if (stealActive && stealingTeam !== null && timerInterval) {
+      playHeartbeat();
+    } else if (!stealActive) {
+      if (audio) audio.play().catch(()=>{});
+    }
+
+    if (bar) bar.classList.add('running'); // 👈 resume smooth animation
   }
 }
 
@@ -521,11 +540,12 @@ function revealAnswer() {
   const stealBtn = document.getElementById('stealBtn');
   if (stealBtn) stealBtn.disabled = true;
 
-  stealActive = false;
-  stealingTeam = null;
+  if (!stealActive) {
+    stealingTeam = null;
+  }
 
   const stealBanner = document.getElementById('stealBanner');
-  if (stealBanner) stealBanner.classList.remove('active');
+  if (stealBanner && !stealActive) stealBanner.classList.remove('active');
 
   const pauseBtn = document.getElementById('pauseBtn');
   if (pauseBtn) pauseBtn.disabled = true;
@@ -645,13 +665,19 @@ function rebuildScoreButtons(){
       timerPaused = false;
       updateTimerUI();
 
+      const pauseBtn = document.getElementById('pauseBtn');
+      if (pauseBtn) {
+        pauseBtn.disabled = false;
+        pauseBtn.textContent = '⏸ Pause';
+      }
+
       startTimer(STEAL_TIME, STEAL_TIME);
       playHeartbeat();
     };
 
-    container.appendChild(picker);
-  return;
-}
+      container.appendChild(picker);
+    return;
+  }
 
   // STEAL MODE: ONLY STEALING TEAM CAN SCORE
   if (stealActive && stealingTeam !== null) {
@@ -687,6 +713,7 @@ function rebuildScoreButtons(){
       updateTimerUI();
       buildScoreboard();
       rebuildScoreButtons();
+      stopHeartbeat();
     };
 
     container.appendChild(changeBtn);
@@ -713,7 +740,7 @@ function rebuildScoreButtons(){
 function getDailyDoubleWager(){
   const wager = Number(document.getElementById("wagerInput")?.value);
   if (!wager || wager <= 0) {
-    alert("Enter a wager!");
+    showAppAlert("Enter a wager!", "⚡ WAGER REQUIRED ⚡");
     return null;
   }
   return wager;
@@ -829,8 +856,9 @@ function showResultFlash(type){
 
   document.body.appendChild(div);
 
-  setTimeout(() => div.remove(), 1000);
+ setTimeout(() => div.remove(), type === 'correct' ? 500 : 900);
 }
+
 
 function triggerDailyDoubleFX() {
   // SOUND
@@ -874,11 +902,19 @@ function syncModalScoreboard() {
 // ── Reset ──────────────────────────────────────────────────────────────────
 function resetGame(){
   if (!categories.length || !questions.length) {
-    alert('No game is currently loaded.');
+   showAppAlert("No game is currently loaded.", "⚠️ NO GAME LOADED ⚠️");
     return;
   }
 
-  if(!confirm('Reset this board? Scores and answered tiles will be cleared, but the questions and teams will stay the same.')) return;
+  document.getElementById("resetBoardWarningBg").classList.add("open");
+}
+
+function cancelResetBoard() {
+  document.getElementById("resetBoardWarningBg").classList.remove("open");
+}
+
+function confirmResetBoard() {
+  document.getElementById("resetBoardWarningBg").classList.remove("open");
 
   scores = Array(teamCount).fill(0);
   activeTeam = 0;
@@ -1010,7 +1046,7 @@ function duplicateSavedGame(name) {
   const saved = localStorage.getItem(oldKey);
 
   if (!saved) {
-    alert("Saved game not found.");
+    showAppAlert("Saved game not found.", "⚠️ GAME NOT FOUND ⚠️");
     return;
   }
 
@@ -1373,7 +1409,7 @@ function populateBuiltInTemplates(){
 async function loadSelectedBuiltInTemplate(){
   const select = document.getElementById("builtInTemplateSelect");
   if (!select || !select.value) {
-    alert("Choose a template first.");
+    showAppAlert("Choose a template first.", "⚠️ TEMPLATE REQUIRED ⚠️");
     return;
   }
 
@@ -1392,7 +1428,7 @@ async function loadSelectedBuiltInTemplate(){
       showDraftSavedBanner();
     }
   } catch (err) {
-    alert("Could not load this template.");
+    showAppAlert("Could not load this template.", "⚠️ TEMPLATE ERROR ⚠️");
     console.error(err);
   }
 }
@@ -1419,7 +1455,10 @@ window.startGame = function () {
   currentEditName = saveName;
 
   if (!saveName) {
-    alert("Please enter a class / period name before starting.");
+    showAppAlert(
+      "Please enter a class / period name before starting.",
+      "⚠️ CLASS / PERIOD REQUIRED ⚠️"
+    );
     return;
   }
 
@@ -1443,17 +1482,21 @@ window.startGame = function () {
   }
 
   if (shouldWarn) {
-    const ok = confirm(
-      `A game for "${saveName}" is already in progress.
+    pendingStartFreshName = saveName;
 
-  Starting a new game will:
-  • reset scores
-  • clear answered questions
+    document.getElementById("startFreshWarningText").innerHTML = `
+      A game for <span class="save-name">"${saveName}"</span> is already in progress.
 
-  Click OK to start fresh, or Cancel to keep the current game.`
-    );
+      <ul>
+        <li>↺ Reset scores</li>
+        <li>□ Clear answered questions</li>
+      </ul>
 
-    if (!ok) return;
+      Start fresh, or keep the current game?
+    `;
+
+    document.getElementById("startFreshWarningBg").classList.add("open");
+    return;
   }
 
   if (!startSessionFromCurrentTemplate()) return;
@@ -1468,6 +1511,32 @@ window.startGame = function () {
   buildBoard();
   saveGame();
 };
+
+function cancelStartFresh() {
+  pendingStartFreshName = null;
+  document.getElementById("startFreshWarningBg").classList.remove("open");
+}
+
+function confirmStartFresh() {
+  const saveName = pendingStartFreshName;
+  pendingStartFreshName = null;
+
+  document.getElementById("startFreshWarningBg").classList.remove("open");
+
+  if (!saveName) return;
+
+  if (!startSessionFromCurrentTemplate()) return;
+
+  document.getElementById("teacherSetup").style.display = "none";
+  document.getElementById("gameArea").style.display = "block";
+  document.getElementById("gameBottomBar").style.display = "block";
+
+  updateGameScreenHeader(saveName);
+
+  buildScoreboard();
+  buildBoard();
+  saveGame();
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   newDraft();
@@ -1743,8 +1812,10 @@ function resumeSavedGame(name) {
     );
 
   if (!hasCompleteCategories || !hasCompleteQuestions) {
-    alert("This saved game is incomplete. Click Edit and finish all categories, answers, and questions before resuming.");
-    return;
+    showAppAlert(
+      "This saved game is incomplete.<br><br>Click <span class='save-name'>Edit</span> and finish all categories, answers, and questions before resuming.",
+      "⚠️ SAVED GAME INCOMPLETE ⚠️"
+    );
   }
 
   const selectedTeamCount = getSelectedTeamCount();
@@ -1874,6 +1945,20 @@ function quitToBuilder(){
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function showAppAlert(message, title = "⚠️ WARNING ⚠️") {
+  const titleEl = document.getElementById("appAlertTitle");
+  const textEl = document.getElementById("appAlertText");
+  const bg = document.getElementById("appAlertBg");
+
+  if (titleEl) titleEl.textContent = title;
+  if (textEl) textEl.innerHTML = message;
+  if (bg) bg.classList.add("open");
+}
+
+function closeAppAlert() {
+  const bg = document.getElementById("appAlertBg");
+  if (bg) bg.classList.remove("open");
+}
 
 
 
