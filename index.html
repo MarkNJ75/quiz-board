@@ -648,6 +648,25 @@
       background: #0d1f8c;
       box-shadow: 0 0 10px #f5c51866;
     }
+
+    .missing-field {
+      border-color: #f5c518 !important;
+      box-shadow: 0 0 0 2px rgba(245, 197, 24, 0.35) !important;
+      background-color: rgba(245, 197, 24, 0.08) !important;
+      transition: box-shadow 0.25s ease, background-color 0.25s ease;
+    }
+
+    .category-missing {
+      outline: 2px solid rgba(245, 197, 24, 0.5);
+      background-color: rgba(245, 197, 24, 0.06);
+      border-radius: 8px;
+    }
+
+    @keyframes missingFieldPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
     .team-card.score-flash {
       animation: scoreFlash 0.8s ease-out;
     }

@@ -19,6 +19,7 @@ let teamBeingStolenFrom = null;
 let turnTeamBeforeSteal = null;
 let currentEditName = null;
 let pendingStartFreshName = null;
+let pendingIncompleteResumeName = null;
 // ── Teams ──────────────────────────────────────────────────────────────────
 const MIN_TEAMS = 2;
 const MAX_TEAMS = 6;
@@ -1163,9 +1164,14 @@ function readBuilderData(requireComplete=true){
   const data = [];
 
   for(let c=0; c<count; c++){
-    const titleEl = document.getElementById(`cat-title-${c}`);
+   const titleEl = document.getElementById(`cat-title-${c}`);
     const title = titleEl ? titleEl.value.trim() : '';
     const cat = { name: title, questions: [] };
+
+    if (requireComplete && (!title || isDefaultCategoryTitle(title))) {
+      return null;
+    }
+    
 
     for(let r=0; r<ROWS; r++){
       const answer = document.getElementById(`answer-${c}-${r}`)?.value.trim() || '';
@@ -1173,7 +1179,6 @@ function readBuilderData(requireComplete=true){
       const dd = document.getElementById(`dd-${c}-${r}`)?.checked || false;
 
       if(requireComplete && (!answer || !question)){
-        alert(`Please fill in both the answer and question for ${title}, $${POINT_VALUES[r]}.`);
         return null;
       }
 
@@ -1499,7 +1504,10 @@ window.startGame = function () {
     return;
   }
 
-  if (!startSessionFromCurrentTemplate()) return;
+    if (!startSessionFromCurrentTemplate()) {
+    showIncompleteGameWarning();
+    return;
+  }
 
   document.getElementById("teacherSetup").style.display = "none";
   document.getElementById("gameArea").style.display = "block";
@@ -1594,7 +1602,11 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-
+document.addEventListener("input", (e) => {
+  if (e.target.classList.contains("missing-field") && e.target.value.trim()) {
+    e.target.classList.remove("missing-field");
+  }
+});
 
 let draftSaveTimer;
 let draftBannerTimer;
@@ -1812,11 +1824,16 @@ function resumeSavedGame(name) {
     );
 
   if (!hasCompleteCategories || !hasCompleteQuestions) {
+    pendingIncompleteResumeName = name;
+    pendingMissingFieldFocus = true;
+
     showAppAlert(
-      "This saved game is incomplete.<br><br>Click <span class='save-name'>Edit</span> and finish all categories, answers, and questions before resuming.",
+      "This saved game is incomplete.<br><br>Click OK to edit it and finish all categories, answers, and questions before resuming.",
       "⚠️ SAVED GAME INCOMPLETE ⚠️"
     );
-  }
+
+  return;
+}
 
   const selectedTeamCount = getSelectedTeamCount();
   const savedTeamCount = clampTeamCount(state.teamCount || state.scores?.length || 2);
@@ -1955,10 +1972,109 @@ function showAppAlert(message, title = "⚠️ WARNING ⚠️") {
   if (bg) bg.classList.add("open");
 }
 
+let pendingMissingFieldFocus = false;
+
 function closeAppAlert() {
   const bg = document.getElementById("appAlertBg");
   if (bg) bg.classList.remove("open");
+
+  if (pendingIncompleteResumeName) {
+    const nameToEdit = pendingIncompleteResumeName;
+    pendingIncompleteResumeName = null;
+
+    editSavedGame(nameToEdit);
+
+    setTimeout(() => {
+      highlightMissingFields();
+    }, 400);
+
+    return;
+  }
+
+  if (pendingMissingFieldFocus) {
+    pendingMissingFieldFocus = false;
+    highlightMissingFields();
+  }
 }
 
+function isDefaultCategoryTitle(value) {
+  return /^Category\s+\d+$/i.test(String(value || "").trim());
+}
 
+function isMissingField(field) {
+  const value = field.value.trim();
 
+  if (!value) return true;
+
+  if (field.classList.contains("category-title-input")) {
+    return isDefaultCategoryTitle(value);
+  }
+
+  return false;
+}
+
+function highlightMissingFields() {
+  const fields = [
+    document.getElementById("saveNameInput"),
+    document.getElementById("gameSubtitleInput"),
+    ...document.querySelectorAll(".category-title-input"),
+    ...document.querySelectorAll(".qa-grid textarea")
+  ].filter(Boolean);
+
+  const missingFields = fields.filter(isMissingField);
+  if (!missingFields.length) return;
+
+  document.querySelectorAll(".missing-field").forEach(el => {
+    el.classList.remove("missing-field");
+  });
+
+  document.querySelectorAll(".category-editor").forEach(el => {
+    el.classList.remove("category-missing");
+  });
+
+  missingFields.forEach(field => {
+    field.classList.add("missing-field");
+  });
+
+  document.querySelectorAll(".category-editor").forEach(editor => {
+    const title = editor.querySelector(".category-title-input");
+    const textareas = editor.querySelectorAll("textarea");
+
+    const hasMissing =
+      isMissingField(title) ||
+      Array.from(textareas).some(isMissingField);
+
+    if (hasMissing) editor.classList.add("category-missing");
+  });
+
+  const first = missingFields[0];
+
+  first.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+
+  setTimeout(() => {
+    first.focus();
+  }, 350);
+}
+
+function showIncompleteGameWarning() {
+  pendingMissingFieldFocus = true;
+
+  showAppAlert(
+    "Please finish all categories, answers, and questions before starting or resuming the game.",
+    "⚠️ GAME INCOMPLETE ⚠️"
+  );
+}
+
+function isBoardComplete() {
+  const fields = [
+    document.getElementById("saveNameInput"),
+    document.getElementById("gameSubtitleInput"),
+    ...document.querySelectorAll(".category-title-input"),
+    ...document.querySelectorAll(".qa-grid textarea")
+  ].filter(Boolean);
+
+  return fields.every(field => !isMissingField(field));
+}
