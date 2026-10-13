@@ -920,6 +920,9 @@
 
             <div class="builder-actions">
               <button class="small-reset-btn" onclick="newDraft()">New Draft</button>
+              <button class="small-reset-btn" onclick="exportGameTemplate()" title="Download the current game as a JSON template">⬇ Export Game</button>
+              <button class="small-reset-btn" onclick="document.getElementById('gameTemplateFile').click()" title="Load a game template from a JSON file">⬆ Import Game</button>
+              <input type="file" id="gameTemplateFile" accept=".json,application/json" style="display:none" onchange="importGameTemplate(this)">
               <button class="small-reset-btn" onclick="startGame()">Start Game</button>
             </div>
           </div>
