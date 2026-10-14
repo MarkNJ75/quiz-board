@@ -12,6 +12,7 @@ let questions  = [];
 let answered   = [];
 let viewOnlyMode = false;
 let stealingTeam = null;
+let stealAttemptedTeams = new Set();
 let originalTeam = null;
 let questionWasRevealed = false;
 let stealPenaltyApplied = false;
@@ -312,6 +313,7 @@ function confirmSteal(){
   originalTeam = activeTeam;
   turnTeamBeforeSteal = activeTeam;
   stealPenaltyApplied = false;
+  stealAttemptedTeams = new Set([originalTeam]);
 
   stopTimer();
   stopThinkMusic();
@@ -330,8 +332,40 @@ function confirmSteal(){
   applyStealDimming();
 
   setTimeout(() => {
-    rebuildScoreButtons();
+    selectRandomStealingTeam();
   }, 50);
+}
+
+function selectRandomStealingTeam() {
+  if (!stealActive || !currentCell) return;
+  const eligible = scores.map((_, i) => i).filter(i => !stealAttemptedTeams.has(i));
+  if (!eligible.length) {
+    revealAndFreezeAfterScoring();
+    markCurrentCellAnswered();
+    advanceTurnFrom(turnTeamBeforeSteal ?? originalTeam);
+    turnTeamBeforeSteal = null;
+    stopHeartbeat();
+    return;
+  }
+  stealingTeam = eligible[Math.floor(Math.random() * eligible.length)];
+  stealAttemptedTeams.add(stealingTeam);
+  if (!stealPenaltyApplied && originalTeam !== null) {
+    const q = questions[currentCell.col][currentCell.row];
+    scores[originalTeam] -= Math.ceil(q.pts / 2);
+    stealPenaltyApplied = true;
+  }
+  activeTeam = stealingTeam;
+  buildScoreboard();
+  applyStealDimming();
+  syncModalScoreboard();
+  saveGame();
+  const closeBtn = document.querySelector('.close-btn');
+  if (closeBtn) closeBtn.disabled = true;
+  rebuildScoreButtons();
+  const pauseBtn = document.getElementById('pauseBtn');
+  if (pauseBtn) { pauseBtn.disabled = false; pauseBtn.textContent = '⏸ Pause'; }
+  startTimer(STEAL_TIME, STEAL_TIME);
+  playHeartbeat();
 }
 
 function cancelSteal(){
@@ -410,6 +444,7 @@ function openModal(col, row){
   currentCell = {col, row};
   questionWasRevealed = false;
   stealActive = false;
+  stealAttemptedTeams = new Set();
 
   const q = questions[col][row];
   const isDD = q.dailyDouble;
@@ -508,6 +543,7 @@ function closeModal() {
   // Reset state
   stealActive = false;
   stealingTeam = null;
+  stealAttemptedTeams = new Set();
 
   currentCell = null;
 }
@@ -617,69 +653,6 @@ function rebuildScoreButtons(){
     return;
   }
 
-  // STEAL MODE: PICK STEALING TEAM FROM DROPDOWN
-  if (stealActive && stealingTeam === null) {
-    const stolenFromTeam = originalTeam; // freezes the team being stolen from
-
-    const picker = document.createElement('select');
-    picker.className = 'setup-select';
-    picker.style.flex = '1';
-    picker.style.minWidth = '220px';
-
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'Choose stealing team...';
-    picker.appendChild(placeholder);
-
-    scores.forEach((_, i) => {
-      if (i === stolenFromTeam) return;
-
-      const option = document.createElement('option');
-      option.value = i;
-      option.textContent = teamNames[i] || 'Team ' + (i + 1);
-      picker.appendChild(option);
-    });
-
-    picker.onchange = () => {
-      if (picker.value === '') return;
-
-      stealingTeam = Number(picker.value);
-
-      if (!stealPenaltyApplied && stolenFromTeam !== null && stolenFromTeam !== stealingTeam) {
-        const halfPenalty = Math.ceil(basePts / 2);
-        scores[stolenFromTeam] -= halfPenalty;
-        stealPenaltyApplied = true;
-      }
-
-      activeTeam = stealingTeam;
-      buildScoreboard();
-      applyStealDimming();
-      syncModalScoreboard?.();
-      saveGame();
-
-      const closeBtn = document.querySelector('.close-btn');
-      if (closeBtn) closeBtn.disabled = true;
-
-      rebuildScoreButtons();
-      timerSec = STEAL_TIME;
-      timerMax = STEAL_TIME;
-      timerPaused = false;
-      updateTimerUI();
-
-      const pauseBtn = document.getElementById('pauseBtn');
-      if (pauseBtn) {
-        pauseBtn.disabled = false;
-        pauseBtn.textContent = '⏸ Pause';
-      }
-
-      startTimer(STEAL_TIME, STEAL_TIME);
-      playHeartbeat();
-    };
-
-      container.appendChild(picker);
-    return;
-  }
-
   // STEAL MODE: ONLY STEALING TEAM CAN SCORE
   if (stealActive && stealingTeam !== null) {
     const i = stealingTeam;
@@ -695,29 +668,10 @@ function rebuildScoreButtons(){
 
     const wrongBtn = document.createElement('button');
     wrongBtn.className = 'score-btn wrong';
-    wrongBtn.textContent = '✕ ' + name + ' Wrong -' + wager;
+    wrongBtn.textContent = '✕ ' + name + ' Wrong (0 points)';
     wrongBtn.onclick = () => handleWrongAnswer(i);
     container.appendChild(wrongBtn);
 
-    const changeBtn = document.createElement('button');
-    changeBtn.className = 'score-btn skip';
-    changeBtn.textContent = 'Choose Different Team';
-    changeBtn.onclick = () => {
-      stealingTeam = null;
-      activeTeam = originalTeam;
-      stopTimer();
-      stopThinkMusic();
-
-      timerSec = STEAL_TIME;
-      timerMax = STEAL_TIME;
-      timerPaused = false;
-      updateTimerUI();
-      buildScoreboard();
-      rebuildScoreButtons();
-      stopHeartbeat();
-    };
-
-    container.appendChild(changeBtn);
     return;
   }
 
@@ -763,11 +717,20 @@ function handleWrongAnswer(teamIdx = activeTeam){
     const wager = getDailyDoubleWager();
     if (wager === null) return;
     updateScore(teamIdx, -wager);
-  } else {
+  } else if (!stealActive) {
     updateScore(teamIdx, -q.pts);
   }
 
   playWrongSound();
+  if (stealActive && !q.dailyDouble) {
+    stopHeartbeat();
+    stealingTeam = null;
+    if (stealAttemptedTeams.size < scores.length) {
+      triggerLightningFX();
+      selectRandomStealingTeam();
+      return;
+    }
+  }
   showResultFlash('wrong');
 
   const teamToAdvanceFrom = (stealActive && turnTeamBeforeSteal !== null)
