@@ -1,0 +1,108 @@
+{
+  "version": 2,
+  "type": "jeopardy-template",
+  "subtitle": "Grade 9 ESL Review — Quilt, Unusual Normality & Monthly Writing",
+  "categories": [
+    "A Quilt of a Country",
+    "Unusual Normality",
+    "Monthly Writing"
+  ],
+  "questions": [
+    [
+      {
+        "pts": 100,
+        "answer": "A patchwork quilt",
+        "question": "What object does Anna Quindlen use as a metaphor for America?",
+        "dailyDouble": false
+      },
+      {
+        "pts": 200,
+        "answer": "Diversity",
+        "question": "What word describes people from many different backgrounds?",
+        "dailyDouble": false
+      },
+      {
+        "pts": 300,
+        "answer": "Unity",
+        "question": "What idea means coming together despite differences?",
+        "dailyDouble": false
+      },
+      {
+        "pts": 400,
+        "answer": "Immigrants",
+        "question": "What do we call people who move to a new country to live?",
+        "dailyDouble": false
+      },
+      {
+        "pts": 500,
+        "answer": "Claim and evidence",
+        "question": "What two elements help explain and support an interpretation of Quindlen's message?",
+        "dailyDouble": false
+      }
+    ],
+    [
+      {
+        "pts": 100,
+        "answer": "Normal",
+        "question": "What word means usual or expected?",
+        "dailyDouble": false
+      },
+      {
+        "pts": 200,
+        "answer": "Unusual",
+        "question": "What word means different from what is typical?",
+        "dailyDouble": false
+      },
+      {
+        "pts": 300,
+        "answer": "Perspective",
+        "question": "What do we call someone's way of seeing or understanding the world?",
+        "dailyDouble": false
+      },
+      {
+        "pts": 400,
+        "answer": "Text evidence",
+        "question": "What should you use from the reading to support an interpretation?",
+        "dailyDouble": false
+      },
+      {
+        "pts": 500,
+        "answer": "Explanation or reasoning",
+        "question": "In a CER paragraph, what connects your evidence back to your claim?",
+        "dailyDouble": false
+      }
+    ],
+    [
+      {
+        "pts": 100,
+        "answer": "A claim",
+        "question": "What sentence states the main point of your response?",
+        "dailyDouble": false
+      },
+      {
+        "pts": 200,
+        "answer": "Evidence",
+        "question": "What part of CER supports your claim with details from a text?",
+        "dailyDouble": false
+      },
+      {
+        "pts": 300,
+        "answer": "Reasoning",
+        "question": "What part of CER explains why the evidence supports the claim?",
+        "dailyDouble": false
+      },
+      {
+        "pts": 400,
+        "answer": "A complete paragraph",
+        "question": "What should include a claim, relevant evidence, and reasoning?",
+        "dailyDouble": false
+      },
+      {
+        "pts": 500,
+        "answer": "Both texts",
+        "question": "Which readings can you use to compare ideas about identity, belonging, or normality?",
+        "dailyDouble": false
+      }
+    ]
+  ]
+}
